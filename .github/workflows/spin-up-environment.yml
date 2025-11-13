@@ -4,6 +4,36 @@ on:
   pull_request:
     types: [labeled]
   workflow_dispatch:
+    inputs:
+      resource_group:
+        description: 'Azure Resource Group'
+        required: false
+        type: string
+        default: 'cd-with-actions'
+      location:
+        description: 'Azure Location'
+        required: false
+        type: string
+        default: 'East US'
+  workflow_call:
+    inputs:
+      resource_group:
+        description: 'Azure Resource Group'
+        required: false
+        type: string
+        default: 'cd-with-actions'
+      location:
+        description: 'Azure Location'
+        required: false
+        type: string
+        default: 'East US'
+    secrets:
+      AZURE_CREDENTIALS:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+      CR_PAT:
+        required: true
 
 env:
   IMAGE_REGISTRY_URL: ghcr.io
@@ -19,6 +49,9 @@ jobs:
   setup-up-azure-resources:
     runs-on: ubuntu-latest
     #if: contains(github.event.pull_request.labels.*.name, 'spin up environment')
+    env:
+      AZURE_RESOURCE_GROUP: ${{ inputs.resource_group || 'cd-with-actions' }}
+      AZURE_LOCATION: ${{ inputs.location || 'East US' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,7 +64,7 @@ jobs:
       - name: Create Azure resource group
         if: success()
         run: |
-          az group create --location ${{env.AZURE_LOCATION}} --name ${{env.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          az group create --location "${{env.AZURE_LOCATION}}" --name ${{env.AZURE_RESOURCE_GROUP}} --subscription ${{secrets.AZURE_SUBSCRIPTION_ID}}
 
       - name: Create Azure app service plan
         if: success()
